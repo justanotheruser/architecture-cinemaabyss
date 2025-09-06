@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: events-service
+  namespace: cinemaabyss
+  labels:
+    app: events-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: events-service
+  template:
+    metadata:
+      labels:
+        app: events-service
+    spec:
+      containers:
+        - name: events-service
+          image: ghcr.io/justanotheruser/architecture-cinemaabyss/events-service:1.2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+              name: http
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: cinemaabyss-config
+                  key: EVENTS_PORT
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: cinemaabyss-config
+                  key: KAFKA_BROKERS
+            - name: TOPIC_MOVIE
+              valueFrom:
+                configMapKeyRef:
+                  name: cinemaabyss-config
+                  key: TOPIC_MOVIE
+            - name: TOPIC_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: cinemaabyss-config
+                  key: TOPIC_USER
+            - name: TOPIC_PAYMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: cinemaabyss-config
+                  key: TOPIC_PAYMENT
+            - name: CONSUMER_GROUP
+              valueFrom:
+                configMapKeyRef:
+                  name: cinemaabyss-config
+                  key: CONSUMER_GROUP
+            - name: CONSUME_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: cinemaabyss-config
+                  key: CONSUME_ENABLED
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: cinemaabyss-config
+                  key: LOG_LEVEL
+          readinessProbe:
+            httpGet:
+              path: /api/events/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/events/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: events-service
+  namespace: cinemaabyss
+  labels:
+    app: events-service
+spec:
+  type: ClusterIP
+  selector:
+    app: events-service
+  ports:
+    - name: http
+      port: 8082
+      targetPort: http

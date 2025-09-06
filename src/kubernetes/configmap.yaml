@@ -4,6 +4,7 @@ metadata:
   name: cinemaabyss-config
   namespace: cinemaabyss
 data:
+  PORT: "8000"
   # Database configuration
   DB_HOST: "postgres"
   DB_PORT: "5432"
@@ -13,7 +14,18 @@ data:
   # Service URLs
   MONOLITH_URL: "http://monolith:8080"
   MOVIES_SERVICE_URL: "http://movies-service:8081"
-  
+  EVENTS_SERVICE_URL: "http://event-servise:8082"
+
   # Strangler Fig configuration
   GRADUAL_MIGRATION: "true"
-  MOVIES_MIGRATION_PERCENT: "100"
+  MOVIES_MIGRATION_PERCENT: "50"
+
+  # Events
+  EVENTS_PORT: "8082"
+  KAFKA_BROKERS: "kafka.cinemaabyss.svc.cluster.local:9092"
+  TOPIC_MOVIE: "movie-events"
+  TOPIC_USER: "user-events"
+  TOPIC_PAYMENT: "payment-events"
+  CONSUMER_GROUP: "events-service"
+  CONSUME_ENABLED: "true"
+  LOG_LEVEL: "INFO"

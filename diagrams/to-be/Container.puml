@@ -1,0 +1,88 @@
+@startuml
+!include ../C4_Container.puml
+
+top to bottom direction
+skinparam maxMessageSize 0
+title КиноБездна - диаграмма контейнеров
+
+Person(user, "User", "Пользователь системы")
+
+
+System_Ext(payment_system, "Payment system", "Платёжные системы")
+System_Ext(cdn, "Content Delivery Network", "Akamai")
+System_Ext(providers, "Providers", "Онлайн-кинотеатры")
+
+Container_Boundary(CinemaAbyss, "Кинобездна") {
+    Container(api_gateway, "API Gateway", "Kong")
+    Container(user_db, "Users DB", "Postgres", "Пользователи и подписки")
+    Container(user_session_db, "User session db",  "DynamoDB", "Прогресс просмотра и его настройки (разрешение, субтитры etc.)")
+    Container(payment_service, "Payment service", "Go, Gin")
+    Container(movie_catalog_service, "Movie Catalog", "Go, Gin, langchaingo", "Сервис поиска фильмов")
+    Container(movie_catalog_db, "Movies DB", "MongoDB", "Хранит метаданные о фильме")
+    Container(query_cache, "Query Cache", "Redis")
+    Container(user_service, "User service", "Go, Gin")
+    Container(auth_service, "Auth service", "Go, Gin")
+    Container(streaming_orchestrator, "Streaming Orchestrator", "Go, Gin", "Отвечает за выбор источника фильма")
+    Container(movie_ratings_service, "Movie Ratings", "Go, Gin")
+    Container(movie_ratings_queue, "Movie Ratings Events", "Kafka")
+    Container(movie_ratings_db, "Movie Ratings DB", "Postgres")
+    Container(rails_cron_job, "CronJob", "Раз в сутки", "Триггер обновления\nнеперсонализированных")
+    Container(rails_service, "Rails Service", "Сервис рекомендаций")
+    Container(rails_db, "Rails Service DB", "БД рекомендаций")
+    Container(movie_ingester, "Movie Ingester", "Go, Gin, kafka-go")
+    Container(event_queue, "Event Queue", "Kafka")
+    Container(movie_unifier, "Movie Unifier", "Python, kafka-python", "Дедуплицирует, считает эмбеддинги для поиска, сохраняет фильм в каталог")
+    Container(rails_cache, "Rails Cache", "Кэш рекомендаций")
+    Container(movie_ratings_cron_job, "CronJob", "Раз в час", "Триггер пересчёта средней оценки")
+    Container(cron_job_user_embeddings, "CronJob", "Раз в сутки", "Триггер пересчёта эмбедингов")
+    Container(user_taste_service, "User Taste Service", "Python, FastAPI")
+    Container(user_taste_db, "User Taste DB", "Qdrant")
+}
+
+Lay_Distance(api_gateway, user_service, 3)
+Lay_Distance(api_gateway, auth_service, 3)
+Lay_Distance(api_gateway, streaming_orchestrator, 4)
+Lay_Distance(api_gateway, movie_catalog, 3)
+Lay_Distance(rails_service, movie_catalog, 2)
+
+
+Rel(user, api_gateway, "Регистрация/поиск/запуск просмотра/оплата")
+Rel(api_gateway, user_service, "Регистрация, управления подпиской,\n данные сессии")
+Rel(api_gateway, auth_service, "Авторизация")
+Rel(auth_service, api_gateway, "jwt токен")
+Rel(auth_service, user_db, "")
+Rel(api_gateway, movie_catalog_service, "Поиск фильмов")
+Rel(api_gateway, streaming_orchestrator, "Просмотр фильма")
+Rel(user_service, payment_service, "Производит списания по подписке")
+Rel(user_service, user_db, "Использует")
+Rel(user_service, user_session_db, "Использует")
+Rel(payment_service, payment_system, "Производит оплату")
+Rel(movie_catalog_service, movie_catalog_db, "Читает")
+Rel(movie_catalog_service, user_service, "Читает профиль\n(настройки родительского контроля etc.)")
+Rel(movie_catalog_service, query_cache, "Читает")
+Rel(providers, user, "Транслируют фильм")
+Rel(cdn, user, "Постеры/cубтитры")
+Rel(streaming_orchestrator, providers, "Выписывает токен на просмотр фильма")
+Rel(streaming_orchestrator, providers, "Проверяет доступность")
+Rel(providers, movie_ingester, "Отправляют информацию о новых фильмах")
+Rel(movie_ingester, event_queue, "События о новых/удалённых фильмах")
+Rel(event_queue, movie_unifier, "")
+Rel(movie_unifier, providers, "Получает постер и субтитры")
+Rel(movie_unifier, movie_catalog_db, "Читает и пишет")
+Rel(movie_unifier, cdn, "Загружает постеры/субтитры")
+Rel(api_gateway, movie_ratings_service, "Оценки пользователя")
+Rel(movie_ratings_service, movie_ratings_db, "")
+Rel(rails_cron_job, rails_service, "Вызывает")
+Rel(rails_service, rails_db, "пишет, читает\nесли нет в кэше")
+Rel(rails_service, rails_cache, "")
+Rel(rails_service, movie_ratings_db, "читает")
+Rel(api_gateway, rails_service, "Запрашивает")
+Rel(movie_ratings_service, movie_ratings_queue, "")
+Rel(movie_ratings_queue, rails_service, "")
+Rel(movie_ratings_cron_job, movie_ratings_service, "Вызывает")
+Rel(movie_ratings_service, movie_catalog_service, "Выставляет среднюю оценку")
+Rel(cron_job_user_embeddings, user_taste_service, "Вызывает")
+Rel(movie_ratings_queue, user_taste_service, "")
+Rel(user_taste_service, user_taste_db, "")
+Rel(rails_service, user_taste_service, "Запрашивает")
+@enduml

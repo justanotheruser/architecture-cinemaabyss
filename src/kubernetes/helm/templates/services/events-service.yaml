@@ -25,7 +25,61 @@ spec:
     spec:
       containers:
       - name: events-service
-       .... тут
+        image: {{ .Values.eventsService.image.repository }}:{{ .Values.eventsService.image.tag }}
+        imagePullPolicy: {{ .Values.eventsService.image.pullPolicy }}
+        env:
+          - name: PORT
+            value: "{{ .Values.eventsService.service.targetPort }}"
+        env:
+          - name: PORT
+            value: "{{ .Values.eventsService.service.port }}"
+          - name: KAFKA_BROKERS
+            valueFrom:
+              configMapKeyRef:
+                name: cinemaabyss-config
+                key: KAFKA_BROKERS
+          - name: TOPIC_MOVIE
+            valueFrom:
+              configMapKeyRef:
+                name: cinemaabyss-config
+                key: TOPIC_MOVIE
+          - name: TOPIC_USER
+            valueFrom:
+              configMapKeyRef:
+                name: cinemaabyss-config
+                key: TOPIC_USER
+          - name: TOPIC_PAYMENT
+            valueFrom:
+              configMapKeyRef:
+                name: cinemaabyss-config
+                key: TOPIC_PAYMENT
+          - name: CONSUMER_GROUP
+            valueFrom:
+              configMapKeyRef:
+                name: cinemaabyss-config
+                key: CONSUMER_GROUP
+          - name: CONSUME_ENABLED
+            valueFrom:
+              configMapKeyRef:
+                name: cinemaabyss-config
+                key: CONSUME_ENABLED
+          - name: LOG_LEVEL
+            valueFrom:
+              configMapKeyRef:
+                name: cinemaabyss-config
+                key: LOG_LEVEL
+        readinessProbe:
+          httpGet:
+            path: /api/events/health
+            port: {{ .Values.eventsService.service.targetPort }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/events/health
+            port: {{ .Values.eventsService.service.targetPort }}
+          initialDelaySeconds: 20
+          periodSeconds: 20
 ---
 apiVersion: v1
 kind: Service
@@ -37,5 +91,12 @@ metadata:
     app.kubernetes.io/name: {{ include "cinemaabyss.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
- ........ и тут
-{{- end }}
+  type: ClusterIP
+  selector:
+    app: events-service
+  ports:
+  ports:
+    - name: http
+      port: {{ .Values.eventsService.service.port }}
+      targetPort: {{ .Values.eventsService.service.targetPort }}
+{{ end }}

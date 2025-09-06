@@ -1,7 +1,8 @@
 # Архитектура микросервисов CinemaAbyss
 
 ## Обзор
- В проекте реализована следующая функциональность:
+
+В проекте реализована следующая функциональность:
 
 - Извлечение микросервисов с использованием паттерна Strangler Fig;
 - Развертывание в Kubernetes для оркестрации и масштабирования;
@@ -12,6 +13,7 @@
 ## Компоненты
 
 ### Монолит
+
 Исходное монолитное приложение:
 
 - Управляет пользователями;
@@ -24,6 +26,7 @@
 ### Микросервисы
 
 #### Movies Service
+
 Извлечен из монолита, обрабатывает всю функциональность, связанную с фильмами:
 
 - Метаданные фильмов;
@@ -33,6 +36,7 @@
 Расположен в src/microservices/movies/.
 
 #### Events Service
+
 Обрабатывает коммуникацию между сервисами на основе событий с использованием Kafka:
 
 - События фильмов (просмотр, оценка, добавление);
@@ -42,6 +46,7 @@
 Расположен в src/microservices/events/.
 
 #### Proxy Service (API Gateway)
+
 Реализует функционал для постепенного перехода от монолита к микросервисам:
 
 - Маршрутизирует запросы монолитом и микросервисами;
@@ -53,24 +58,27 @@
 ## Инфраструктура
 
 ### Kubernetes
+
 Манифесты Kubernetes для развертывания всех компонентов расположены в src/kubernetes/.
 
 ### Helm Charts
+
 Charts Helm для упрощения развертывания и управления:
 
 Расположены в src/kubernetes/helm/cinemaabyss/.
 
 ### Kafka
+
 Расположена в src/kubernetes/kafka/.
 
 ### CI/CD Pipeline
+
 GitHub Actions для непрерывной интеграции и развертывания:
 
 - Сборка и тестирование микросервисов;
 - Сборка и выгрузка Docker-образов.
 
 Расположены в .github/workflows/.
-
 
 ## Детали реализации
 
@@ -95,6 +103,7 @@ GitHub Actions для непрерывной интеграции и разве�
    ```
 
 После запуска сервисы доступны:
+
 - Monolith: http://localhost:8080
 - Movies Service: http://localhost:8081
 - Events Service: http://localhost:8082
@@ -102,6 +111,7 @@ GitHub Actions для непрерывной интеграции и разве�
 - Kafka UI: http://localhost:8090
 
 3. Останавливаем сервисы:
+
    ```bash
    docker-compose down -v
    ```
@@ -124,32 +134,44 @@ GitHub Actions для непрерывной интеграции и разве�
 #### Развертывание
 
 1. Создайте namespace:
+
 ```bash
 kubectl apply -f src/kubernetes/namespace.yaml
 ```
+
 2. Разверните Kafka:
+
 ```bash
 kubectl apply -f src/kubernetes/kafka/kafka.yaml
 ```
+
 3. Разверните базу данных:
+
 ```bash
 kubectl apply -f src/kubernetes/postgres.yaml
 ```
+
 4. Разверните монолит:
+
 ```bash
 kubectl apply -f src/kubernetes/monolith.yaml
 ```
+
 5.Разверните микросервисы:
+
 ```bash
 kubectl apply -f src/kubernetes/movies-service.yaml
 kubectl apply -f src/kubernetes/events-service.yaml
 ```
+
 6. Разверните прокси-сервис:
+
 ```bash
 kubectl apply -f src/kubernetes/proxy-service.yaml
 ```
 
 ### Развертывание через CI/CD
+
 Проект включает GitHub Actions для CI/CD:
 
 - Сборка и тестирование: Автоматически собирает и тестирует код при пуше или пул-реквесте.
@@ -162,11 +184,13 @@ kubectl apply -f src/kubernetes/proxy-service.yaml
 3. Выполните ручное или автоматическое развертывание (Helm) в локальной среде.
 
 ## Тестирование API с Postman
-Проект включает комплексный набор тестов Postman, которые можно запускать из командной строки с помощью Newman. 
+
+Проект включает комплексный набор тестов Postman, которые можно запускать из командной строки с помощью Newman.
 
 Тесты проверяют базовую функциональность всех сервисов в архитектуре.
 
 Покрытие тестами
+
 - Сервис: Пользователи, Фильмы, Платежи, Подписки.
 - Микросервис фильмов: Проверка работоспособности, Операции с фильмами.
 - Микросервис событий: Проверка работоспособности, Публикация событий.
@@ -181,42 +205,87 @@ kubectl apply -f src/kubernetes/proxy-service.yaml
 - Newman (установлен через npm)
 
 #### Установка
+
 1. Перейдите в директорию тестов
+
 ```bash
 cd tests/postman
 ```
+
 2. Установите зависимости
+
 ```bash
 npm install
 ```
+
 3. Запустите тесты локально:
+
 ```bash
 npm run test:local
 ```
+
 или:
+
 ```bash
 npm run test:docker
 ```
+
 4. Запустите тесты с помощью shell-скрипта
 1. Сделайте скрипт исполняемым
-chmod +x run-tests.sh
+   chmod +x run-tests.sh
 
-2. Запустите все тесты:
+1. Запустите все тесты:
+
 ```bash
 ./run-tests.sh -e local
 ```
+
 или:
+
 ```bash
 ./run-tests.sh -d -e docker
 ```
 
 ### Тестирование деплоя руками
+
 1. Тестирование с Docker Compose
 
    Отправьте запросы к API Gateway:
+
    ```bash
    curl http://localhost:8000/api/movies
    ```
+
 2. Протестируйте постепенный переход, изменив переменную окружения MOVIES_MIGRATION_PERCENT в файле docker-compose.yml.
 
 3. Проверьте топики Kafka и сообщения через Kafka UI по адресу http://localhost:8090
+
+# Задание 1
+
+![image](diagrams/to-be/Container.svg)
+
+# Задание 2
+
+## Результаты тестов
+
+![image](tests.png "tests.png")
+
+![image](kafka_ui.png "kafka_ui.png")
+
+# Задание 4
+
+![image](tests_kubernetes.png "tests_kubernetes.png")
+
+Чтобы заработало надо выполнить
+
+```console
+NODE_IP=$(hostname -I | awk '{print $1}')
+echo "$NODE_IP cinemaabyss.example.com" | sudo tee -a /etc/hosts
+```
+
+Возможно, это какая-то особенность microk8s, по-другому настроить не получилось.
+
+## Установка helm-чарта
+
+![image](helm_1.png "helm_1.png")
+![image](helm_2.png "helm_2.png")

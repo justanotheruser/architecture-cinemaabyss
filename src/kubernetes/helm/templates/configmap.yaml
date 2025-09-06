@@ -6,6 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: {{ include "cinemaabyss.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: helm
 data:
   # Database configuration
   DB_HOST: {{ .Values.database.host | quote }}
@@ -13,10 +14,21 @@ data:
   DB_NAME: {{ .Values.database.name | quote }}
   DB_USER: {{ .Values.database.user | quote }}
 
-  # Service URLs
-  MONOLITH_URL: "http://monolith:{{ .Values.monolith.service.port }}"
-  MOVIES_SERVICE_URL: "http://movies:{{ .Values.moviesService.service.port }}"
-  
+  # Service URLs (ClusterIP DNS)
+  MONOLITH_URL: {{ printf "http://monolith:%v" .Values.monolith.service.port | quote }}
+  MOVIES_SERVICE_URL: {{ printf "http://movies-service:%v" .Values.moviesService.service.port | quote }}
+  EVENTS_SERVICE_URL: {{ printf "http://events-service:%v" .Values.eventsService.service.port | quote }}
+
   # Strangler Fig configuration
   GRADUAL_MIGRATION: {{ .Values.config.gradualMigration | quote }}
   MOVIES_MIGRATION_PERCENT: {{ .Values.config.moviesMigrationPercent | quote }}
+
+  
+  # Events service
+  KAFKA_BROKERS: {{ .Values.config.kafkaBrokers | default "kafka.cinemaabyss.svc.cluster.local:9092" | quote }}
+  TOPIC_MOVIE: {{ .Values.config.topicMovie | default "movie-events" | quote }}
+  TOPIC_USER: {{ .Values.config.topicUser | default "user-events" | quote }}
+  TOPIC_PAYMENT: {{ .Values.config.topicPayment | default "payment-events" | quote }}
+  CONSUMER_GROUP: {{ .Values.config.consumerGroup | default "events-service" | quote }}
+  CONSUME_ENABLED: {{ .Values.config.consumeEnabled | default "true" | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | default "INFO" | quote }}

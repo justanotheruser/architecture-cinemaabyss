@@ -28,13 +28,15 @@ database:
     enabled: true
     size: 10Gi
     accessMode: ReadWriteOnce
+    storageClassName: microk8s-hostpath
+  createSecret: false
 
 # Monolith configuration
 monolith:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/monolith
-    tag: latest
+    repository: ghcr.io/justanotheruser/architecture-cinemaabyss/monolith
+    tag: 1.2.0
     pullPolicy: Always
   replicas: 1
   resources:
@@ -53,8 +55,8 @@ monolith:
 proxyService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/proxy-service
-    tag: latest
+    repository: ghcr.io/justanotheruser/architecture-cinemaabyss/proxy-service
+    tag: 1.2.0
     pullPolicy: Always
   replicas: 1
   resources:
@@ -73,8 +75,8 @@ proxyService:
 moviesService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/movies-service
-    tag: latest
+    repository: ghcr.io/justanotheruser/architecture-cinemaabyss/movies-service
+    tag: 1.2.0
     pullPolicy: Always
   replicas: 1
   resources:
@@ -93,8 +95,8 @@ moviesService:
 eventsService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/events-service
-    tag: latest
+    repository: ghcr.io/justanotheruser/architecture-cinemaabyss/events-service
+    tag: 1.2.0
     pullPolicy: Always
   replicas: 1
   resources:
@@ -108,6 +110,7 @@ eventsService:
     port: 8082
     targetPort: 8082
     type: ClusterIP
+  
 
 # Kafka configuration
 kafka:
@@ -128,6 +131,7 @@ kafka:
     enabled: true
     size: 5Gi
     accessMode: ReadWriteOnce
+    storageClassName: microk8s-hostpath
   topics:
     - name: movie-events
       partitions: 1
@@ -158,25 +162,26 @@ zookeeper:
     enabled: true
     size: 1Gi
     accessMode: ReadWriteOnce
+    storageClassName: microk8s-hostpath
 
 # Ingress configuration
 ingress:
   enabled: true
-  className: nginx
+  className: public
   annotations:
-    kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    kubernetes.io/ingress.class: "public"
   hosts:
     - host: cinemaabyss.example.com
       paths:
-        - path: /
-          pathType: Prefix
-          service: proxy-service
-          port: 80
         - path: /api/events
           pathType: Prefix
           service: events-service
           port: 8082
+        - path: /
+          pathType: Prefix
+          service: proxy-service
+          port: 80
 
 # Application configuration
 config:

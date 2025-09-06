@@ -70,6 +70,7 @@ spec:
       resources:
         requests:
           storage: {{ .Values.database.persistence.size }}
+        storageClassName: {{ .Values.database.persistence.storageClassName }}
   {{- else }}
       - name: postgres-data
         emptyDir: {}
